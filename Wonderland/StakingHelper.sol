@@ -1,7 +1,3 @@
-/**
- *Submitted for verification at BscScan.com on 2021-11-21
-*/
-
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.7.5;
 
@@ -78,20 +74,30 @@ interface IERC20 {
   event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-contract StakingWarmup {
+interface IStaking {
+    function stake( uint _amount, address _recipient ) external returns ( bool );
+    function claim( address _recipient ) external;
+}
 
-    address public immutable staking;
-    address public immutable SWORD;
+contract StakingHelper {
 
-    constructor ( address _staking, address _sREM ) {
+    event LogStake(address indexed recipient, uint amount);
+
+    IStaking public immutable staking;
+    IERC20 public immutable Time;
+
+    constructor ( address _staking, address _Time ) {
         require( _staking != address(0) );
-        staking = _staking;
-        require( _sREM != address(0) );
-        SWORD = _sREM;
+        staking = IStaking(_staking);
+        require( _Time != address(0) );
+        Time = IERC20(_Time);
     }
 
-    function retrieve( address _staker, uint _amount ) external {
-        require( msg.sender == staking );
-        IERC20( SWORD ).transfer( _staker, _amount );
+    function stake( uint _amount, address recipient ) external {
+        Time.transferFrom( msg.sender, address(this), _amount );
+        Time.approve( address(staking), _amount );
+        staking.stake( _amount, recipient );
+        staking.claim( recipient );
+        emit LogStake(recipient, _amount);
     }
 }

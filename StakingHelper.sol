@@ -1,3 +1,7 @@
+/**
+ *Submitted for verification at BscScan.com on 2021-11-21
+*/
+
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.7.5;
 
@@ -81,23 +85,20 @@ interface IStaking {
 
 contract StakingHelper {
 
-    event LogStake(address indexed recipient, uint amount);
+    address public immutable staking;
+    address public immutable TEM;
 
-    IStaking public immutable staking;
-    IERC20 public immutable Time;
-
-    constructor ( address _staking, address _Time ) {
+    constructor ( address _staking, address _REM ) {
         require( _staking != address(0) );
-        staking = IStaking(_staking);
-        require( _Time != address(0) );
-        Time = IERC20(_Time);
+        staking = _staking;
+        require( _REM != address(0) );
+        TEM = _REM;
     }
-
+    
     function stake( uint _amount, address recipient ) external {
-        Time.transferFrom( msg.sender, address(this), _amount );
-        Time.approve( address(staking), _amount );
-        staking.stake( _amount, recipient );
-        staking.claim( recipient );
-        emit LogStake(recipient, _amount);
+        IERC20( TEM ).transferFrom( msg.sender, address(this), _amount );
+        IERC20( TEM ).approve( staking, _amount );
+        IStaking( staking ).stake( _amount, recipient );
+        IStaking( staking ).claim( recipient );
     }
 }
