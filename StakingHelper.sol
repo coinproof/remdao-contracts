@@ -1,7 +1,3 @@
-/**
- *Submitted for verification at BscScan.com on 2021-11-21
-*/
-
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.7.5;
 
@@ -86,18 +82,18 @@ interface IStaking {
 contract StakingHelper {
 
     address public immutable staking;
-    address public immutable TEM;
+    address public immutable REM;
 
     constructor ( address _staking, address _REM ) {
         require( _staking != address(0) );
         staking = _staking;
         require( _REM != address(0) );
-        TEM = _REM;
+        REM = _REM;
     }
     
     function stake( uint _amount, address recipient ) external {
-        IERC20( TEM ).transferFrom( msg.sender, address(this), _amount );
-        IERC20( TEM ).approve( staking, _amount );
+        IERC20( REM ).transferFrom( msg.sender, address(this), _amount );
+        IERC20( REM ).approve( staking, _amount );
         IStaking( staking ).stake( _amount, recipient );
         IStaking( staking ).claim( recipient );
     }

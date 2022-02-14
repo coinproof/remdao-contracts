@@ -1,7 +1,3 @@
-/**
- *Submitted for verification at BscScan.com on 2021-11-21
-*/
-
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity 0.7.5;
 
@@ -81,17 +77,17 @@ interface IERC20 {
 contract StakingWarmup {
 
     address public immutable staking;
-    address public immutable SWORD;
+    address public immutable sREM;
 
     constructor ( address _staking, address _sREM ) {
         require( _staking != address(0) );
         staking = _staking;
         require( _sREM != address(0) );
-        SWORD = _sREM;
+        sREM = _sREM;
     }
 
     function retrieve( address _staker, uint _amount ) external {
         require( msg.sender == staking );
-        IERC20( SWORD ).transfer( _staker, _amount );
+        IERC20( sREM ).transfer( _staker, _amount );
     }
 }
