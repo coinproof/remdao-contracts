@@ -25,6 +25,10 @@ BSC Testnet Contracts :[{
 
 Steps of setup:
 
+BUSD BOND:
+** add staking Helper
+** 
+
 Treasury:
 ** Queue Distributor contract with _managing = 8
 ** toggle Distributor contract bond calculator2
