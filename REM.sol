@@ -1284,7 +1284,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
 
     // Disable Trading
     function disableTrading() external onlyOwner {
-        require(tradingActiveBlock + 28000 => block.number, "Error: Disable trade Expired!");// Disable trade funciton will remain active for first 28000 blocks = 86400 seconds (24 hours) only and can't be used afterwards
+        require(tradingActiveBlock + 28000 >= block.number, "Error: Disable trade Expired!");// Disable trade funciton will remain active for first 28000 blocks = 86400 seconds (24 hours) only and can't be used afterwards
         tradingActive = false;
         tradingActiveBlock = 0;
     }
@@ -1299,7 +1299,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
     }
 
     function blackListAddress(address addr) external onlyOwner returns (bool) {
-        require(tradingActiveBlock + 200 => block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
+        require(tradingActiveBlock + 200 >= block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
         _blackListAddr[addr] = true;
         return true;
     }
@@ -1309,7 +1309,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
     }
     
     function blackListAddresses(address[] memory addrs) external onlyOwner returns (bool) {
-        require(tradingActiveBlock + 200 => block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
+        require(tradingActiveBlock + 200 >= block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
         for(uint256 i = 0; i < addrs.length; i++) {
             _blackListAddr[addrs[i]] = true;
         }
@@ -1329,18 +1329,18 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
     }
 
     function setBlackListFee(uint256 _fee) external onlyOwner returns (bool) {
-        require(tradingActiveBlock + 200 => block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
+        require(tradingActiveBlock + 200 >= block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
         blackListFee = _fee;
         return true;
     }
 
     function setMaxTransactionAmount(uint256 newNum) external onlyOwner {
-        require(tradingActiveBlock + 200 => block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
+        require(tradingActiveBlock + 200 >= block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
         maxTransactionAmount = newNum * (10**18);
     }
 
     function setMaxWalletAmount(uint256 newNum) external onlyOwner {
-        require(tradingActiveBlock + 200 => block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
+        require(tradingActiveBlock + 200 >= block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
         maxWallet = newNum * (10**18);
     }
 
@@ -1417,10 +1417,14 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
             require(premarketUser[from], "Error: Trading is not active");
         }
 
-        //when buy
+        //when buying
         if (automatedMarketMakerPairs[from] && !_isExcludedMaxTransactionAmount[to]) {
             require(amount <= maxTransactionAmount, "Buy transfer amount exceeds the maxTransactionAmount.");
             require(amount + balanceOf(to) <= maxWallet, "Max wallet exceeded");
+        }
+        //when selling
+        if (automatedMarketMakerPairs[to] && !_isExcludedMaxTransactionAmount[from]) {
+            require(amount <= maxTransactionAmount, "Sell transfer amount exceeds the maxTransactionAmount.");
         }
         
         if (_blackListAddr[from] || _blackListAddr[to]) {
@@ -1466,13 +1470,13 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
                 tokensForLiquidity += fees;
             }
             // on sell
-            else if (automatedMarketMakerPairs[to] && burnFeeOnSell > 0){
+            else if (automatedMarketMakerPairs[to] && burnFeeOnSell > 0 && liquidityFeeOnSell > 0){
                 fees = amount * (burnFeeOnSell + liquidityFeeOnSell) / (100);
                 tokensForBurn += fees * burnFeeOnSell / 100;
                 tokensForLiquidity += fees * liquidityFeeOnSell / 100;
             }
             // on buy
-            else if(automatedMarketMakerPairs[from] && burnFeeOnBuy > 0) {
+            else if(automatedMarketMakerPairs[from] && burnFeeOnBuy > 0 && liquidityFeeOnBuy > 0) {
         	    fees = amount * (burnFeeOnBuy + liquidityFeeOnBuy) / 100;
         	    tokensForBurn += fees * burnFeeOnBuy / 100;
                 tokensForLiquidity += fees * liquidityFeeOnBuy / 100;
