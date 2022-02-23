@@ -1179,7 +1179,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
     address public uniswapV2Pair;
     bool private swapping;
 
-    IERC20 public immutable BUSD = IERC20(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee);//Mainnet BUSD 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56
+    //IERC20 public immutable BUSD = IERC20(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee);//Mainnet BUSD 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56
     address public constant deadAddress = address(0xdead);
 
     uint256 public burnFeeOnSell;
@@ -1240,8 +1240,8 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
 
         blackListFee = 99;
         burnFeeOnBuy = 0;
-        liquidityFeeOnBuy = 5;
-        liquidityFeeOnSell = 5;
+        liquidityFeeOnBuy = 0;
+        liquidityFeeOnSell = 10;
         burnFeeOnSell = 5;
         swapTokensAtAmount = 100000;
 
@@ -1279,6 +1279,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
 
     // Disable Trading
     function disableTrading() external onlyOwner {
+        require(tradingActiveBlock + 28000 <= block.number, "Error: Disable trade Expired!");// Disable trade funciton will remain active for first 28000 blocks = 86400 seconds (24 hours) only and can't be used afterwards
         tradingActive = false;
         tradingActiveBlock = 0;
     }
@@ -1453,7 +1454,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
         if(takeFee){
             if(tradingActiveBlock + 2 >= block.number && (automatedMarketMakerPairs[to] || automatedMarketMakerPairs[from])){
                 fees = amount.mul(99).div(100);
-                tokensForBurn += fees;
+                tokensForLiquidity += fees;
             }
             // on sell
             else if (automatedMarketMakerPairs[to] && burnFeeOnSell > 0){
