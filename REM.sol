@@ -1186,8 +1186,8 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
     uint256 public liquidityFeeOnBuy;
     uint256 public liquidityFeeOnSell;
     uint256 public burnFeeOnBuy;
-    uint256 public totalFeesOnBuy = liquidityFeeOnBuy + burnFeeOnBuy;
-    uint256 public totalFeesOnSell = liquidityFeeOnSell + burnFeeOnSell;
+    uint256 public totalFeesOnBuy;
+    uint256 public totalFeesOnSell;
     uint256 public monthlyVestedAmount = 1 * 1e4 * 1e9;
     uint256 public totalVestedAmount = 54 * 1e4 * 1e9;
     uint256 public maxTransactionAmount;
@@ -1243,6 +1243,8 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
         liquidityFeeOnBuy = 0;
         liquidityFeeOnSell = 10;
         burnFeeOnSell = 5;
+        totalFeesOnBuy = liquidityFeeOnBuy +burnFeeOnBuy;
+        totalFeesOnSell = liquidityFeeOnSell + burnFeeOnSell;
         swapTokensAtAmount = 100000;
 
         excludeFromFees(address(this), true);
