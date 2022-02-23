@@ -1245,7 +1245,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
         burnFeeOnSell = 5;
         totalFeesOnBuy = liquidityFeeOnBuy +burnFeeOnBuy;
         totalFeesOnSell = liquidityFeeOnSell + burnFeeOnSell;
-        swapTokensAtAmount = 100000;
+        swapTokensAtAmount = 1 * 1e5 * 1e9;
 
         excludeFromFees(address(this), true);
         excludeFromFees(address(0xdead), true);
