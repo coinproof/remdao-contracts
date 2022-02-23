@@ -1202,6 +1202,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
     // exlcude from fees and max transaction amount
     mapping (address => bool) private _isExcludedFromFees;
     mapping (address => bool) public _isExcludedMaxTransactionAmount;
+    mapping (address => bool) public premarketUser;
 
     // blacklist the address
     mapping (address => bool) private _blackListAddr;
@@ -1246,6 +1247,8 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
         totalFeesOnBuy = liquidityFeeOnBuy +burnFeeOnBuy;
         totalFeesOnSell = liquidityFeeOnSell + burnFeeOnSell;
         swapTokensAtAmount = 1 * 1e5 * 1e9;
+
+        premarketUser[msg.sender] = true;
 
         excludeFromFees(address(this), true);
         excludeFromFees(address(0xdead), true);
@@ -1299,6 +1302,10 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
         require(tradingActiveBlock + 200 <= block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
         _blackListAddr[addr] = true;
         return true;
+    }
+
+    function addPremarketUser(address _target, bool _status) external onlyOwner {
+        premarketUser[_target] = _status;
     }
     
     function blackListAddresses(address[] memory addrs) external onlyOwner returns (bool) {
@@ -1407,7 +1414,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
         require(from != address(0), "ERC20: transfer from the zero address!");
 
         if(!tradingActive){
-            require(_isExcludedFromFees[from] || _isExcludedFromFees[to], "Trading is not active.");
+            require(premarketUser[from], "Error: Trading is not active");
         }
 
         //when buy

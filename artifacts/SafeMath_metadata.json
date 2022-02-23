@@ -33,11 +33,11 @@
 	},
 	"sources": {
 		"REM.sol": {
-			"keccak256": "0x730f1b0d206a08b44af95a7b5d1986f2b120fcdf2ba844712463e1b647bbfb25",
+			"keccak256": "0xa84356c42b61e9a7241e96eb9735369f38bc26b25018f19fb1a2488e7eb69d67",
 			"license": "AGPL-3.0-or-later",
 			"urls": [
-				"bzz-raw://d19256563b22db07f50af2a0dec7878a9a12bb5a12216cca2337687685ff8233",
-				"dweb:/ipfs/QmSZcYFsZmuTXzvKbUxL8XQwoEhawHaiHK5Ev5s9qLcUG3"
+				"bzz-raw://216a742deafe4ff03b8a1d32cd8e7b7d530fafaaeaa91f9886d049020136cafd",
+				"dweb:/ipfs/QmNPCyPDhhZUEiyVvxRtJnHbRiYQ1K36xdcF1GhncEWypG"
 			]
 		}
 	},
