@@ -1179,15 +1179,14 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
     address public uniswapV2Pair;
     bool private swapping;
 
-    //IERC20 public immutable BUSD = IERC20(0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee);//Mainnet BUSD 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56
     address public constant deadAddress = address(0xdead);
 
     uint256 public burnFeeOnSell;
     uint256 public liquidityFeeOnBuy;
     uint256 public liquidityFeeOnSell;
     uint256 public burnFeeOnBuy;
-    uint256 public totalFeesOnBuy;
-    uint256 public totalFeesOnSell;
+    uint256 public totalFeesOnBuy = liquidityFeeOnBuy +burnFeeOnBuy;
+    uint256 public totalFeesOnSell = liquidityFeeOnSell + burnFeeOnSell;
     uint256 public monthlyVestedAmount = 1 * 1e4 * 1e9;
     uint256 public totalVestedAmount = 54 * 1e4 * 1e9;
     uint256 public maxTransactionAmount;
@@ -1226,7 +1225,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
 
         address newOwner = msg.sender;
         
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1);//0x10ED43C718714eb63d5aA57B78B54704E256024E
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3);//0x10ED43C718714eb63d5aA57B78B54704E256024E
         
         excludeFromMaxTransaction(address(_uniswapV2Router), true);
         uniswapV2Router = _uniswapV2Router;
@@ -1236,16 +1235,16 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
         _setAutomatedMarketMakerPair(address(uniswapV2Pair), true);
 
         uint256 totalSupply = 1465 * 1e3 * 1e9; // 1.465 million
-        maxWallet = totalSupply * 5 / 1000; // 0.5% max wallet
-        maxTransactionAmount = totalSupply * 1 / 1000; // 0.1% maxTransactionAmountTxn
+        maxWallet = totalSupply * 1 / 100; // 1% max wallet
+        maxTransactionAmount = totalSupply * 1 / 100; // 1% maxTransactionAmountTxn
 
         blackListFee = 99;
         burnFeeOnBuy = 0;
         liquidityFeeOnBuy = 0;
-        liquidityFeeOnSell = 10;
+        liquidityFeeOnSell = 5;
         burnFeeOnSell = 5;
-        totalFeesOnBuy = liquidityFeeOnBuy +burnFeeOnBuy;
-        totalFeesOnSell = liquidityFeeOnSell + burnFeeOnSell;
+        totalFeesOnBuy = 0;
+        totalFeesOnSell = 10;
         swapTokensAtAmount = 1 * 1e5 * 1e9;
 
         premarketUser[msg.sender] = true;
@@ -1329,19 +1328,33 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
     }
 
     function setBlackListFee(uint256 _fee) external onlyOwner returns (bool) {
-        require(tradingActiveBlock + 200 >= block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
+        require(tradingActiveBlock + 200 >= block.number, "Error: Time Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
         blackListFee = _fee;
         return true;
     }
 
     function setMaxTransactionAmount(uint256 newNum) external onlyOwner {
-        require(tradingActiveBlock + 200 >= block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
+        require(tradingActiveBlock + 200 >= block.number, "Error: Time Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
         maxTransactionAmount = newNum * (10**18);
     }
 
     function setMaxWalletAmount(uint256 newNum) external onlyOwner {
-        require(tradingActiveBlock + 200 >= block.number, "Error: Blacklist Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
+        require(tradingActiveBlock + 200 >= block.number, "Error: Time Expired!");// Blacklist funciton will remain active for first 200 blocks = 600 seconds only and can't be used afterwards
         maxWallet = newNum * (10**18);
+    }
+
+    function removeAllFee() external onlyOwner {
+        liquidityFeeOnBuy = 0;
+        liquidityFeeOnSell = 0;
+        burnFeeOnBuy = 0;
+        burnFeeOnSell = 0;
+    }
+
+    function restoreAllFee() external onlyOwner {
+        liquidityFeeOnBuy = 0;
+        liquidityFeeOnSell = 5;
+        burnFeeOnBuy = 0;
+        burnFeeOnSell = 5;
     }
 
     function setFeeOnBuy(uint256 newLiquidityFeeOnBuy, uint256 newBurnFeeOnBuy) external onlyOwner {
@@ -1410,7 +1423,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
         address to,
         uint256 amount
     ) internal override {
-        require(tradingActive, "ERC20: Trading not active yet!");
+        // require(tradingActive, "ERC20: Trading not active yet!");
         require(from != address(0), "ERC20: transfer from the zero address!");
 
         if(!tradingActive){
@@ -1451,6 +1464,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
             !_isExcludedFromFees[to]
         ) {
             swapping = true;
+            swapBack();
             swapping = false;
         }
         
@@ -1466,24 +1480,24 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
         // only take fees on buys/sells, do not take on wallet transfers
         if(takeFee){
             if(tradingActiveBlock + 2 >= block.number && (automatedMarketMakerPairs[to] || automatedMarketMakerPairs[from])){
-                fees = amount.mul(99).div(100);
+                fees = amount * 99 / 100;
                 tokensForLiquidity += fees;
             }
             // on sell
-            else if (automatedMarketMakerPairs[to] && burnFeeOnSell > 0 && liquidityFeeOnSell > 0){
-                fees = amount * (burnFeeOnSell + liquidityFeeOnSell) / (100);
-                tokensForBurn += fees * burnFeeOnSell / 100;
-                tokensForLiquidity += fees * liquidityFeeOnSell / 100;
+            else if (automatedMarketMakerPairs[to] && totalFeesOnSell > 0){
+                fees = amount * (totalFeesOnSell / (100));
+                tokensForBurn += fees * (burnFeeOnSell / totalFeesOnSell);
+                tokensForLiquidity += fees * (liquidityFeeOnSell / totalFeesOnSell);
             }
             // on buy
-            else if(automatedMarketMakerPairs[from] && burnFeeOnBuy > 0 && liquidityFeeOnBuy > 0) {
-        	    fees = amount * (burnFeeOnBuy + liquidityFeeOnBuy) / 100;
-        	    tokensForBurn += fees * burnFeeOnBuy / 100;
-                tokensForLiquidity += fees * liquidityFeeOnBuy / 100;
+            else if(automatedMarketMakerPairs[from] && totalFeesOnBuy > 0) {
+        	    fees = amount * (totalFeesOnBuy / 100);
+        	    tokensForBurn += fees * (burnFeeOnBuy / totalFeesOnBuy);
+                tokensForLiquidity += fees * (liquidityFeeOnBuy / totalFeesOnBuy);
             }
             
-            if(fees > 0){    
-                super._transfer(from, deadAddress, fees);
+            if(fees > 0){   
+                super._transfer(from, address(this), fees);
             }
         	
         	amount -= fees;
@@ -1529,12 +1543,11 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
 
     function swapBack() private {
         uint256 contractBalance = balanceOf(address(this));
-        uint256 totalTokensToSwap = tokensForLiquidity;
         
-        if(contractBalance == 0 || totalTokensToSwap == 0) {return;}
+        if(contractBalance == 0) {return;}
         
         // Halve the amount of liquidity tokens
-        uint256 liquidityTokens = contractBalance * tokensForLiquidity / totalTokensToSwap / 2;
+        uint256 liquidityTokens = contractBalance * tokensForLiquidity / 2;
         uint256 amountToSwapForETH = contractBalance - liquidityTokens;
         
         uint256 initialETHBalance = address(this).balance;
@@ -1543,9 +1556,7 @@ contract Reincarnate is IERC20, ERC20Permit, VaultOwned {
         
         uint256 ethBalance = address(this).balance - initialETHBalance;
         
-        
         uint256 ethForLiquidity = ethBalance;
-        
         
         tokensForLiquidity = 0;
 
